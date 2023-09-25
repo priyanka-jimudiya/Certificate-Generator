@@ -1,4 +1,3 @@
-import Konva from 'konva'
 import React, { useEffect, useRef, useState } from 'react'
 
 export default function App() {
@@ -8,14 +7,6 @@ export default function App() {
     const [startY, setStartY] = useState(0)
     const [endX, setEndX] = useState(0)
     const [endY, setEndY] = useState(0)
-    var stage = useRef(null)
-    var layer = useRef(null)
-    const [movingObject, setMovingObject] = useState(false)
-    var currentObject = null
-    // use js and get color pallete
-    const colors = ['#FF5733', '#FFC300', '#33FF57', '#338AFF', '#CC33FF', '#FF33A8'];
-    const [selectedColor, setSelectedColor] = useState(colors[0]);
-
 
     const handleMouseMove = e => {
         const containerRect = canvasRef.current.getBoundingClientRect();
@@ -37,60 +28,22 @@ export default function App() {
             setStartY(relativeY)
         }
         else if (e.type === 'mouseup') {
-            if (drawing && !movingObject) {
-                var rect = new Konva.Rect({
-                    x: startX,
-                    y: startY,
-                    width: endX - startX,
-                    height: endY - startY,
-                    fill: selectedColor,
-                    draggable: true
-                })
-                // var rect = new Konva.Text({
-                //     x: startX,
-                //     y: startY,
-                //     text: 'Simple Text',
-                //     fontSize: 30,
-                //     fontFamily: 'Calibri',
-                //     fill: selectedColor,
-                //     draggable: true
-                // });
-                var tr = new Konva.Transformer();
-                layer.current.add(tr)
-                rect.on('mousedown', () => {
-                    setMovingObject(true)
-                    tr.setNode(rect)
-                })
-
-                layer.current.add(rect)
-            }
-
             setDrawing(false)
-            setMovingObject(false)
+            const canvas = canvasRef.current
+            const ctx = canvas.getContext('2d')
+
+            ctx.fillStyle = 'blue'
+
         }
     }
 
     useEffect(() => {
-        stage.current = new Konva.Stage({
-            container: 'canvas',
-            width: 1500,
-            height: 800,
-        })
+        const canvas = canvasRef.current
+        const ctx = canvas.getContext('2d')
 
-        layer.current = new Konva.Layer()
+        ctx.fillStyle = 'blue'
+        ctx.fillRect(10, 20, 20, 20);
 
-
-        stage.current.add(layer.current)
-
-        // var circle = new Konva.Circle({
-        //     x: 200,
-        //     y: 200,
-        //     radius: 80,
-        //     fill: '#558899',
-        //     draggable: true
-        // })
-
-        // layer.current.add(circle)
     }, [])
 
     return (
@@ -105,8 +58,7 @@ export default function App() {
                 </div >
 
                 <div className="flex-grow bg-gray-100 p-4 flex justify-center items-center">
-                    <div ref={canvasRef} onMouseDown={handleMouseClick} onMouseUp={handleMouseClick} onMouseMove={handleMouseMove} id='canvas' className='border bg-white border-gray-500'></div>
-                    {/* min-h-[80%] min-w-[50%] */}
+                    <canvas ref={canvasRef} onMouseDown={handleMouseClick} onMouseUp={handleMouseClick} onMouseMove={handleMouseMove} className='border bg-white border-gray-500 min-h-[80%]'></canvas>
                 </div>
 
                 <div className="bg-gray-300 p-4">
@@ -116,20 +68,6 @@ export default function App() {
                     <div>startY: {startY.toFixed(0)}</div>
                     <div>endX: {endX.toFixed(0)}</div>
                     <div>endY: {endY.toFixed(0)}</div>
-
-                    <div className="p-4">
-                        <h2 className="text-xl font-semibold mb-4">Color Palette</h2>
-                        <div className="grid grid-cols-3 gap-2">
-                            {colors.map((color, index) => (
-                                <div
-                                    key={index}
-                                    className={`w-5 h-5 rounded-full cursor-pointer border border-gray-200 hover:border-gray-400 transition-all ${selectedColor === color ? 'ring-2 ring-blue-500' : ''}`}
-                                    style={{ backgroundColor: color }}
-                                    onClick={() => setSelectedColor(color)}
-                                ></div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div >
         </>
