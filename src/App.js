@@ -208,18 +208,15 @@ export default function App() {
         // },
     ]
     const exportTo = (exportType) => {
+        // console.log(stage.current.toJSON())
+        // return
         data.forEach((info, i) => {
             // Set Text
-            const block = document.createElement('div')
-            block.id = 'backup-block'
-            block.classList.add('backup-block')
-            document.body.appendChild(block)
-            const stg = Konva.Node.create(stage.current.toJSON(), block.id)
-
-            stg.children.forEach((layer, index) => {
+            stage.current.children.forEach((layer, index) => {
                 layer.children.filter(node => node instanceof Konva.Text).forEach((node, index) => {
                     if (node.text().startsWith('{{') && node.text().endsWith('}}')) {
                         const variable = node.text().slice(2, -2)
+                        node.attrs = { ...node.attrs, variable: `{{${variable}}}` }
                         node.text(info[variable])
                     }
                 })
@@ -227,7 +224,7 @@ export default function App() {
 
             // Export to png
             if (exportType === 'png') {
-                const dataURL = stg.toDataURL({
+                const dataURL = stage.current.toDataURL({
                     pixelRatio: 2
                 })
 
@@ -238,6 +235,90 @@ export default function App() {
                 downloadLink.click()
                 document.body.removeChild(downloadLink)
             }
+
+            stage.current.children.forEach((layer, index) => {
+                layer.children.filter(node => node instanceof Konva.Text).forEach((node, index) => {
+                    if (node.attrs.variable && node.attrs.variable.length > 0) {
+                        console.log(node.attrs.variable)
+                        node.text(node.attrs.variable)
+                        // node.text(node.attrs.variable)
+                    }
+                })
+            })
+            // const block = document.createElement('div')
+            // block.id = 'backup-block'
+            // block.classList.add('backup-block')
+            // document.body.appendChild(block)
+            // const stg = Konva.Node.create(stage.current.toJSON(), block.id)
+            // const stg = new Konva.Stage({
+            //     container: block.id,
+            //     width: stage.width,
+            //     height: stage.height
+            // })
+
+            // stage.current.children.forEach((child) => {
+            //     const clone = child.clone();
+            //     stg.add(clone);
+            // });
+
+            // stg.draw();
+
+            // stage.current.children.forEach((layer, index) => {
+            //     const l = new Konva.Layer({
+            //         name: layer.name
+            //     })
+
+            //     layer.children.forEach((node, index) => {
+            //         l.add(node)
+            //     })
+            //     stg.add(l)
+            // })
+
+            // stg.children.forEach((layer, index) => {
+            //     layer.children.filter(node => node instanceof Konva.Text).forEach((node, index) => {
+            //         if (node.text().startsWith('{{') && node.text().endsWith('}}')) {
+            //             const variable = node.text().slice(2, -2)
+            //             node.text(info[variable])
+            //         }
+            //     })
+            // })
+
+            // stg.children.forEach((layer, index) => {
+            //     layer.children.filter(node => node instanceof Konva.Text).forEach((node, index) => {
+            //         if (node.text().startsWith('{{') && node.text().endsWith('}}')) {
+            //             const variable = node.text().slice(2, -2)
+            //             node.text(info[variable])
+            //         }
+            //     })
+            //     layer.children.filter(node => node instanceof Konva.Image).forEach((node, index) => {
+            //         const img = new window.Image();
+            //         img.src = node.attrs.dataImage;
+            //         img.onload = () => {
+            //             node.image(img)
+            //             // addElementToLayer(image, layer)
+            //             // layer.current.batchDraw();
+            //         };
+            //         // node = node.attrs.dataImage
+            //     })
+            // })
+
+            // console.log(stg)
+            // const uri = stage.current.toDataURL();
+            // console.log(uri)
+            // return
+            // Export to png
+            // if (exportType === 'png') {
+            //     const dataURL = stg.toDataURL({
+            //         pixelRatio: 2
+            //     })
+
+            //     const downloadLink = document.createElement('a')
+            //     downloadLink.download = 'Certificate.png'
+            //     downloadLink.href = dataURL
+            //     document.body.appendChild(downloadLink)
+            //     downloadLink.click()
+            //     document.body.removeChild(downloadLink)
+            // }
         })
     }
 
@@ -250,11 +331,21 @@ export default function App() {
                 const img = new window.Image();
                 img.src = e.target.result;
                 img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(img, 0, 0);
+
+                    const dataURL = canvas.toDataURL('image/jpeg');
                     const image = new Konva.Image({
                         image: img,
                         width: img.width,
                         height: img.height,
-                        draggable: false
+                        draggable: false,
+                        attrs: {
+                            dataImage: dataURL
+                        }
                     })
 
                     addElementToLayer(image, layer)
