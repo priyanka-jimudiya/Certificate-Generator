@@ -1,137 +1,404 @@
-import Konva from 'konva'
 import React, { useEffect, useRef, useState } from 'react'
-
+import './App.css'
+import Konva from 'konva'
 export default function App() {
-    const canvasRef = useRef(null)
-    const [drawing, setDrawing] = useState(false)
-    const [startX, setStartX] = useState(0)
-    const [startY, setStartY] = useState(0)
-    const [endX, setEndX] = useState(0)
-    const [endY, setEndY] = useState(0)
-    var stage = useRef(null)
-    var layer = useRef(null)
-    const [movingObject, setMovingObject] = useState(false)
-    var currentObject = null
-    // use js and get color pallete
-    const colors = ['#FF5733', '#FFC300', '#33FF57', '#338AFF', '#CC33FF', '#FF33A8'];
-    const [selectedColor, setSelectedColor] = useState(colors[0]);
 
-
-    const handleMouseMove = e => {
-        const containerRect = canvasRef.current.getBoundingClientRect();
-        const relativeX = e.clientX - containerRect.left;
-        const relativeY = e.clientY - containerRect.top;
-
-        setEndX(relativeX)
-        setEndY(relativeY)
-    }
-
-    const handleMouseClick = e => {
-        if (e.type === 'mousedown') {
-            setDrawing(true)
-            const containerRect = canvasRef.current.getBoundingClientRect();
-            const relativeX = e.clientX - containerRect.left;
-            const relativeY = e.clientY - containerRect.top;
-
-            setStartX(relativeX)
-            setStartY(relativeY)
-        }
-        else if (e.type === 'mouseup') {
-            if (drawing && !movingObject) {
-                var rect = new Konva.Rect({
-                    x: startX,
-                    y: startY,
-                    width: endX - startX,
-                    height: endY - startY,
-                    fill: selectedColor,
-                    draggable: true
-                })
-                // var rect = new Konva.Text({
-                //     x: startX,
-                //     y: startY,
-                //     text: 'Simple Text',
-                //     fontSize: 30,
-                //     fontFamily: 'Calibri',
-                //     fill: selectedColor,
-                //     draggable: true
-                // });
-                var tr = new Konva.Transformer();
-                layer.current.add(tr)
-                rect.on('mousedown', () => {
-                    setMovingObject(true)
-                    tr.setNode(rect)
-                })
-
-                layer.current.add(rect)
-            }
-
-            setDrawing(false)
-            setMovingObject(false)
-        }
-    }
+    const [menu, setMenu] = useState(null)
+    const [layerState, setLayerState] = useState(1)
+    const [mouseDetails, setMouseDetails] = useState({
+        startX: null,
+        startY: null,
+        endX: null,
+        endY: null
+    })
+    const stage = useRef(null)
+    const layer = useRef(null)
+    const transformer = useRef(new Konva.Transformer())
+    const container = useRef(null)
+    const [currentTool, setCurrentTool] = useState('rectangle')
+    const currentToolRef = useRef(currentTool)
+    const [rightPanel, setRightPanel] = useState('colors')
+    const [currentColor, setCurrentColor] = useState('black')
+    const colors = [
+        'black',
+        'white',
+        'gray',
+        'red',
+        'green',
+        'yellow',
+        'blue',
+        'orange',
+        'purple',
+        'pink',
+        'brown',
+        'silver',
+        'teal',
+        'cyan',
+        'gold',
+        'maroon',
+        'navy',
+        'indigo',
+        'turquoise',
+        'lavender',
+        'magenta',
+        'olive',
+        'salmon',
+        'lime',
+        'beige',
+        'violet',
+        'taupe',
+    ]
 
     useEffect(() => {
         stage.current = new Konva.Stage({
-            container: 'canvas',
-            width: 1500,
-            height: 800,
+            container: 'container',
+            width: 1024,
+            height: 768
         })
 
-        layer.current = new Konva.Layer()
+        const background = new Konva.Rect({
+            width: 1024,
+            height: 768,
+            fill: 'white',
+            attrs: {
+                isBackgroud: true
+            }
+        })
 
-
+        layer.current = new Konva.Layer({
+            name: 'Background'
+        })
+        layer.current.add(background)
+        layer.current.add(transformer.current)
         stage.current.add(layer.current)
+        setLayerState(layerState + 1)
 
-        // var circle = new Konva.Circle({
-        //     x: 200,
-        //     y: 200,
-        //     radius: 80,
-        //     fill: '#558899',
-        //     draggable: true
-        // })
-
-        // layer.current.add(circle)
     }, [])
+
+    const menuClicked = (name, isHover) => {
+        if (name === 'full-screen') {
+            if (isHover)
+                return
+
+            document.getElementById('root').requestFullscreen();
+            setMenu(null)
+            return
+        }
+
+        if (menu === null && isHover)
+            return
+        if (menu !== name || isHover)
+            setMenu(name)
+        else
+            setMenu(null)
+    }
+
+    const handleMouseMove = e => {
+        const containerRect = container.current.getBoundingClientRect();
+        const relativeX = e.clientX - containerRect.left;
+        const relativeY = e.clientY - containerRect.top;
+
+        setMouseDetails({ ...mouseDetails, endX: relativeX, endY: relativeY })
+    }
+
+    const addElementToLayer = (element, layer) => {
+        element.on('click', () => {
+            if (transformer.current.nodes()[0] === element) {
+                transformer.current.nodes([])
+                return
+            }
+
+            // Set current element on click
+            // Not Working
+            // console.log(currentToolRef.current)
+            // if (currentTool !== 'move')
+            //     return
+
+            transformer.current.nodes([element])
+            layer.current.draw()
+        })
+
+        layer.current.add(element)
+    }
+
+    const handleMouseClick = (e) => {
+        if (e.type === 'mousedown') {
+            // start drawing
+            const containerRect = container.current.getBoundingClientRect();
+            const relativeX = e.clientX - containerRect.left;
+            const relativeY = e.clientY - containerRect.top;
+
+            setMouseDetails({ ...mouseDetails, startX: relativeX, startY: relativeY })
+        }
+        else if (e.type === 'mouseup') {
+            if (currentTool === 'rectangle') {
+                var rect = new Konva.Rect({
+                    x: mouseDetails.startX,
+                    y: mouseDetails.startY,
+                    width: mouseDetails.endX - mouseDetails.startX,
+                    height: mouseDetails.endY - mouseDetails.startY,
+                    fill: currentColor,
+                    draggable: false
+                })
+
+
+                addElementToLayer(rect, layer)
+            }
+            else if (currentTool === 'circle') {
+                // const deltaX = mouseDetails.endX - mouseDetails.startX;
+                // const deltaY = mouseDetails.endY - mouseDetails.startY;
+
+                // const radius = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const diffX = (mouseDetails.endX - mouseDetails.startX)
+                const diffY = (mouseDetails.endY - mouseDetails.startY)
+                const radius = Math.abs(diffX > diffY ? diffY : diffX)
+
+                var circle = new Konva.Circle({
+                    x: mouseDetails.startX,
+                    y: mouseDetails.startY,
+                    radius: radius,
+                    fill: currentColor,
+                    draggable: false
+                })
+
+                addElementToLayer(circle, layer)
+            }
+            else if (currentTool === 'text') {
+                var text = new Konva.Text({
+                    x: mouseDetails.startX,
+                    y: mouseDetails.startY,
+                    text: prompt('Enter Text', ''),
+                    fontSize: 24,
+                    fill: currentColor,
+                    draggable: false
+                })
+
+                addElementToLayer(text, layer)
+            }
+        }
+    }
+
+    currentTool && stage.current?.children.forEach((layer, index) => {
+        layer.children.forEach((children, index) => {
+            children.setDraggable(currentTool === 'move' && !children.attrs.isBackgroud)
+        })
+    })
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Escape') {
+            setMenu(null)
+        }
+    }
+
+    const data = [
+        {
+            'fname': 'Abhay',
+            'lname': 'Vachhani',
+            'age': 22
+        },
+        {
+            'fname': 'Umesh',
+            'lname': 'Sahijwani',
+            'age': 21
+        },
+        {
+            'fname': 'Dimple',
+            'lname': 'Bhanushali',
+            'age': 22
+        },
+    ]
+    const exportTo = (exportType) => {
+        data.forEach((info, i) => {
+            // Set Text
+            const block = document.createElement('div')
+            block.id = 'backup-block'
+            block.classList.add('backup-block')
+            document.body.appendChild(block)
+            const stg = Konva.Node.create(stage.current.toJSON(), block.id)
+
+            stg.children.forEach((layer, index) => {
+                layer.children.filter(node => node instanceof Konva.Text).forEach((node, index) => {
+                    if (node.text().startsWith('{{') && node.text().endsWith('}}')) {
+                        const variable = node.text().slice(2, -2)
+                        node.text(info[variable])
+                    }
+                })
+            })
+
+            // Export to png
+            if (exportType === 'png') {
+                const dataURL = stg.toDataURL({
+                    pixelRatio: 2
+                })
+
+                const downloadLink = document.createElement('a')
+                downloadLink.download = 'Certificate.png'
+                downloadLink.href = dataURL
+                document.body.appendChild(downloadLink)
+                downloadLink.click()
+                document.body.removeChild(downloadLink)
+            }
+        })
+    }
+
+
+
+
+    if (currentTool !== 'move') {
+        transformer.current.nodes([])
+    }
+
+    document.addEventListener("keydown", handleKeyPress);
 
     return (
         <>
-            <div className="flex h-screen">
-                <div className="bg-gray-300 p-4 flex flex-col items-center gap-2">
-                    <button className="p-2 rounded-lg bg-gray-50 flex" title="Rectangle Tool">
-                        <span className="inline-flex items-center rounded-md text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-                            <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="20.000000pt" height="20.000000pt" viewBox="0 0 20.000000 20.000000" preserveAspectRatio="xMidYMid meet"> <g transform="translate(0.000000,20.000000) scale(0.015625,-0.015625)" fill="#000000" stroke="none"><path d="M100 1060 c-27 -27 -27 -93 0 -120 11 -11 25 -20 30 -20 6 0 10 -100 10 -280 0 -180 -4 -280 -10 -280 -24 0 -50 -41 -50 -80 0 -53 27 -80 80 -80 39 0 80 26 80 50 0 6 140 10 400 10 260 0 400 -4 400 -10 0 -24 41 -50 80 -50 53 0 80 27 80 80 0 39 -26 80 -50 80 -6 0 -10 100 -10 280 0 180 4 280 10 280 24 0 50 41 50 80 0 53 -27 80 -80 80 -39 0 -80 -26 -80 -50 0 -6 -140 -10 -400 -10 -260 0 -400 4 -400 10 0 24 -41 50 -80 50 -27 0 -47 -7 -60 -20z m945 -101 c4 -11 18 -25 31 -31 l24 -11 0 -278 c0 -272 0 -278 -21 -284 -11 -4 -25 -18 -31 -31 l-11 -24 -397 0 -397 0 -11 24 c-6 13 -20 27 -31 31 -21 6 -21 12 -21 285 0 273 0 279 21 285 11 4 25 18 31 31 l11 24 398 0 c393 0 398 0 404 -21z" /></g></svg>
-                        </span>
+            <section className='main-menu'>
+                <span>
+                    <button onClick={() => menuClicked('file', false)} onMouseOver={() => { menuClicked('file', true) }}>File</button>
+                    <button onClick={() => menuClicked('edit', false)} onMouseOver={() => { menuClicked('edit', true) }}>Edit</button>
+                    <button onClick={() => menuClicked('full-screen', false)} onMouseOver={() => { menuClicked('full-screen', true) }} className='filter-color'>
+                        <svg className='full-screen' version="1.1" width="25" height="25" viewBox="8 8 20 20">
+                            <path d="m 10,16 2,0 0,-4 4,0 0,-2 L 10,10 l 0,6 0,0 z"></path>
+                            <path d="m 20,10 0,2 4,0 0,4 2,0 L 26,10 l -6,0 0,0 z"></path>
+                            <path d="m 24,24 -4,0 0,2 L 26,26 l 0,-6 -2,0 0,4 0,0 z"></path>
+                            <path d="M 12,20 10,20 10,26 l 6,0 0,-2 -4,0 0,-4 0,0 z"></path>
+                        </svg>
                     </button>
-                </div >
+                </span>
 
-                <div className="flex-grow bg-gray-100 p-4 flex justify-center items-center">
-                    <div ref={canvasRef} onMouseDown={handleMouseClick} onMouseUp={handleMouseClick} onMouseMove={handleMouseMove} id='canvas' className='border bg-white border-gray-500'></div>
-                    {/* min-h-[80%] min-w-[50%] */}
-                </div>
+                <span className='right-menu'>
+                    <button onClick={() => menuClicked('export', false)} onMouseOver={() => { menuClicked('export', true) }}>Export</button>
+                </span>
 
-                <div className="bg-gray-300 p-4">
-                    Property Menu
-                    <div>drawing: {drawing ? '1' : '0'}</div>
-                    <div>startX: {startX.toFixed(0)}</div>
-                    <div>startY: {startY.toFixed(0)}</div>
-                    <div>endX: {endX.toFixed(0)}</div>
-                    <div>endY: {endY.toFixed(0)}</div>
+                {menu === 'file' &&
+                    <div className='menu' style={{ marginLeft: 2 }}>
+                        <ul>
+                            <li>New</li>
+                            <li>Open</li>
+                            <li>Save</li>
+                        </ul>
+                    </div>
+                }
+                {menu === 'edit' &&
+                    <div className='menu' style={{ marginLeft: 38 }}>
+                        <ul>
+                            <li>Undo</li>
+                            <li>Redo</li>
+                        </ul>
+                    </div>
+                }
+                {menu === 'export' &&
+                    <div className='menu' style={{ right: 25 }}>
+                        <ul>
+                            <li>JSON</li>
+                            <li onClick={() => exportTo('png')}>PNG</li>
+                            <li>PDF</li>
+                        </ul>
+                    </div>
+                }
+            </section>
+            <section className='secondary-menu'>
+                <img src={`/images/tools/${currentTool}.png`} width={25} className='filter-color current-tool-icon' alt='Tool Logo' />
+                ...
+            </section>
 
-                    <div className="p-4">
-                        <h2 className="text-xl font-semibold mb-4">Color Palette</h2>
-                        <div className="grid grid-cols-3 gap-2">
-                            {colors.map((color, index) => (
-                                <div
-                                    key={index}
-                                    className={`w-5 h-5 rounded-full cursor-pointer border border-gray-200 hover:border-gray-400 transition-all ${selectedColor === color ? 'ring-2 ring-blue-500' : ''}`}
-                                    style={{ backgroundColor: color }}
-                                    onClick={() => setSelectedColor(color)}
-                                ></div>
-                            ))}
+            <div className='main'>
+                <section className='toolbar'>
+                    <button className={'' + currentTool === 'move' ? 'active' : ''} onClick={() => { setCurrentTool('move') }}>
+                        <img src={`/images/tools/move.png`} width={25} className='filter-color' alt='Move Tool' />
+                    </button>
+                    <button className={'' + currentTool === 'text' ? 'active' : ''} onClick={() => { setCurrentTool('text') }}>
+                        <img src={`/images/tools/text.png`} width={25} className='filter-color' alt='Text Tool' />
+                    </button>
+                    <button className={'' + currentTool === 'rectangle' ? 'active' : ''} onClick={() => { setCurrentTool('rectangle') }}>
+                        <img src={`/images/tools/rectangle.png`} width={25} className='filter-color' alt='Rectangle Tool' />
+                    </button>
+                    <button className={'' + currentTool === 'circle' ? 'active' : ''} onClick={() => { setCurrentTool('circle') }}>
+                        <img src={`/images/tools/circle.png`} width={25} className='filter-color' alt='Circle Tool' />
+                    </button>
+                </section>
+                <section className='block'>
+                    <div id='container' ref={container} onMouseMove={handleMouseMove} onMouseDown={handleMouseClick} onMouseUp={handleMouseClick}></div>
+                </section>
+                <section className='right-side-bar'>
+                    <div className='properties-window'>
+                        <div className='header'>
+                            <span className={'' + rightPanel === 'info' ? 'active' : ''} onClick={() => { setRightPanel('info') }}>Info</span>
+                            <span className={'' + rightPanel === 'properties' ? 'active' : ''} onClick={() => { setRightPanel('properties') }}>Properties</span>
+                            <span className={'' + rightPanel === 'colors' ? 'active' : ''} onClick={() => { setRightPanel('colors') }}>Colors</span>
+                        </div>
+                        <div className='content'>
+                            {
+                                rightPanel === 'info' && transformer.current.nodes().length === 1 && <>
+                                    <table>
+                                        <tbody>
+                                            <tr>
+                                                <td>X:</td>
+                                                <td><input type='number' defaultValue={transformer.current.nodes()[0].x().toFixed(0)} onChange={(e) => { transformer.current.nodes()[0].x(parseFloat(e.target.value)) }} /></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Y:</td>
+                                                <td><input type='number' defaultValue={transformer.current.nodes()[0].y().toFixed(0)} onChange={(e) => { transformer.current.nodes()[0].y(parseFloat(e.target.value)) }} /></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </>
+                            }
+                            {
+                                rightPanel === 'colors' &&
+                                <>
+                                    <div className='colors'>
+                                        {colors.map((color, index) => {
+                                            return <button key={index} className={'' + color === currentColor ? 'active' : ''} onClick={() => { setCurrentColor(color) }} style={{ backgroundColor: color }} />
+                                        })}
+                                    </div>
+                                </>
+                            }
                         </div>
                     </div>
-                </div>
-            </div >
+                    <div className='layers-window'>
+                        <div className='header'><span>Layers</span></div>
+                        <div className='content'>
+                            {
+                                layerState && stage.current?.children.filter(node => node instanceof Konva.Layer).map((layer, index) => {
+                                    return <div className='layer active' key={index}>
+                                        <div className='eye'><img src='/images/tools/eye.png' width={20} className='filter-color' alt='Eye' /></div>
+                                        <canvas />
+                                        <div className='name'>{layer.attrs.name}</div>
+                                    </div>
+                                })
+                            }
+
+                            {/* <div className='layer active'>
+                                <div className='eye'><img src='/images/tools/eye.png' width={20} className='filter-color' alt='Eye' /></div>
+                                <canvas />
+                                <div className='name'>Background</div>
+                            </div>
+                            <div className='layer'>
+                                <div className='eye'><img src='/images/tools/eye.png' width={20} className='filter-color' alt='Eye' /></div>
+                                <canvas />
+                                <div className='name'>Background</div>
+                            </div>
+                            <div className='layer'>
+                                <div className='eye'><img src='/images/tools/eye.png' width={20} className='filter-color' alt='Eye' /></div>
+                                <canvas />
+                                <div className='name'>Background</div>
+                            </div> */}
+                        </div>
+                    </div>
+                    <div className='bottom-bar'>
+                        <button>
+                            <img src='/images/tools/folder.png' width={18} className='filter-color' alt='New Folder' />
+                        </button>
+                        <button>
+                            <img src='/images/tools/new-layer.png' width={18} className='filter-color' alt='New Layer' />
+                        </button>
+                        <button>
+                            <img src='/images/tools/delete.png' width={18} className='filter-color' alt='Delete' />
+                        </button>
+                    </div>
+                </section>
+            </div>
         </>
     )
 }
