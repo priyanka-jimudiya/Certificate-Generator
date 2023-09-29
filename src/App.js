@@ -196,16 +196,16 @@ export default function App() {
             'lname': 'Vachhani',
             'age': 22
         },
-        {
-            'fname': 'Umesh',
-            'lname': 'Sahijwani',
-            'age': 21
-        },
-        {
-            'fname': 'Dimple',
-            'lname': 'Bhanushali',
-            'age': 22
-        },
+        // {
+        //     'fname': 'Umesh',
+        //     'lname': 'Sahijwani',
+        //     'age': 21
+        // },
+        // {
+        //     'fname': 'Dimple',
+        //     'lname': 'Bhanushali',
+        //     'age': 22
+        // },
     ]
     const exportTo = (exportType) => {
         data.forEach((info, i) => {
@@ -251,12 +251,14 @@ export default function App() {
                 img.src = e.target.result;
                 img.onload = () => {
                     const image = new Konva.Image({
+                        image: img,
                         width: img.width,
                         height: img.height,
                         draggable: false
                     })
 
                     addElementToLayer(image, layer)
+                    layer.current.batchDraw();
                 };
             };
             reader.readAsDataURL(file);
@@ -337,7 +339,7 @@ export default function App() {
                         <img src={`/images/tools/circle.png`} width={25} className='filter-color' alt='Circle Tool' />
                     </button>
                     <button className={'' + currentTool === 'upload' ? 'active' : ''} onClick={() => {
-
+                        document.getElementById('imageUpload').click()
                         setCurrentTool('move')
                     }}>
                         <img src={`/images/tools/upload.png`} width={25} className='filter-color' alt='Image Tool' />
@@ -427,8 +429,7 @@ export default function App() {
             </div>
 
             {/* Invisible Controls */}
-            <input type="file" accept="image/*" onChange={uploadImage} />
-
+            <input type="file" accept="image/*" id='imageUpload' onChange={uploadImage} className='hidden' />
         </>
     )
 }
