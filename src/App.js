@@ -241,7 +241,27 @@ export default function App() {
         })
     }
 
+    const uploadImage = (event) => {
+        const file = event.target.files[0];
 
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new window.Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const image = new Konva.Image({
+                        width: img.width,
+                        height: img.height,
+                        draggable: false
+                    })
+
+                    addElementToLayer(image, layer)
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
 
     if (currentTool !== 'move') {
@@ -315,6 +335,12 @@ export default function App() {
                     </button>
                     <button className={'' + currentTool === 'circle' ? 'active' : ''} onClick={() => { setCurrentTool('circle') }}>
                         <img src={`/images/tools/circle.png`} width={25} className='filter-color' alt='Circle Tool' />
+                    </button>
+                    <button className={'' + currentTool === 'upload' ? 'active' : ''} onClick={() => {
+
+                        setCurrentTool('move')
+                    }}>
+                        <img src={`/images/tools/upload.png`} width={25} className='filter-color' alt='Image Tool' />
                     </button>
                 </section>
                 <section className='block'>
@@ -399,6 +425,10 @@ export default function App() {
                     </div>
                 </section>
             </div>
+
+            {/* Invisible Controls */}
+            <input type="file" accept="image/*" onChange={uploadImage} />
+
         </>
     )
 }
